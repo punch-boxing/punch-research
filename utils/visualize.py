@@ -107,7 +107,7 @@ def scale_data(data):
     scale = 100
     return np.array([i * scale for i in data])
 
-data = pd.read_csv('./datas/up_down.csv')
+data = pd.read_csv('./datas/stable.csv')
 
 # integral by raw data
 time = data['time']
@@ -133,12 +133,16 @@ position_y = numerical_integration(velocity_y, time)
 position_z = numerical_integration(velocity_z, time)
 
 
-
+diff_time = time
 # integral by diff data
-diff_time = time[:-1]
-diff_acceleration_x = [acceleration_x[i] - acceleration_x[i-1] for i in range(1, len(acceleration_x))]
-diff_acceleration_y = [acceleration_y[i] - acceleration_y[i-1] for i in range(1, len(acceleration_y))]
-diff_acceleration_z = [acceleration_z[i] - acceleration_z[i-1] for i in range(1, len(acceleration_z))]
+# diff_time = time[:-1]
+# diff_acceleration_x = [acceleration_x[i] - acceleration_x[i-1] for i in range(1, len(acceleration_x))]
+# diff_acceleration_y = [acceleration_y[i] - acceleration_y[i-1] for i in range(1, len(acceleration_y))]
+# diff_acceleration_z = [acceleration_z[i] - acceleration_z[i-1] for i in range(1, len(acceleration_z))]
+
+diff_acceleration_x = [acceleration_x[i] - acceleration_x[0] for i in range(len(acceleration_x))]
+diff_acceleration_y = [acceleration_y[i] - acceleration_y[0] for i in range(len(acceleration_y))]
+diff_acceleration_z = [acceleration_z[i] - acceleration_z[0] for i in range(len(acceleration_z))]
 
 diff_velocity_x = numerical_integration(diff_acceleration_x, diff_time)
 diff_velocity_y = numerical_integration(diff_acceleration_y, diff_time)
@@ -147,6 +151,72 @@ diff_velocity_z = numerical_integration(diff_acceleration_z, diff_time)
 diff_position_x = numerical_integration(diff_velocity_x, diff_time)
 diff_position_y = numerical_integration(diff_velocity_y, diff_time)
 diff_position_z = numerical_integration(diff_velocity_z, diff_time)
+
+def correct_acceleration_error(data):
+    error_threshold = 0.1
+    corrected_data = []
+    
+    for i in range(len(data)):
+        if abs(data[i]) < error_threshold:
+            corrected_data.append(0.0)
+        else:
+            corrected_data.append(data[i])
+            
+    
+    
+    # for i in range(1, len(data)):
+    #     if abs(data[i] - data[i-1]) > error_threshold:
+    #         corrected_data.append(data[i])
+    #     else:
+    #         corrected_data.append(corrected_data[i-1])
+    return corrected_data
+
+
+# def correct_velocity_error(data):
+#     error_threshold = 0.07
+#     corrected_data = []
+    
+#     for i in range(len(data)):
+#         if abs(data[i]) < error_threshold:
+#             corrected_data.append(0.0)
+#         else:
+#             corrected_data.append(data[i])
+            
+#     return corrected_data
+
+# corrected_acceleration_x = correct_acceleration_error(acceleration_x)
+# corrected_acceleration_y = correct_acceleration_error(acceleration_y)
+# corrected_acceleration_z = correct_acceleration_error(acceleration_z)
+
+# corrected_diff_acceleration_x = correct_acceleration_error(diff_acceleration_x)
+# corrected_diff_acceleration_y = correct_acceleration_error(diff_acceleration_y)
+# corrected_diff_acceleration_z = correct_acceleration_error(diff_acceleration_z)
+
+
+# diff_acceleration_x = corrected_diff_acceleration_x
+# diff_acceleration_y = corrected_diff_acceleration_y
+# diff_acceleration_z = corrected_diff_acceleration_z
+
+# plt.figure(figsize=(16, 12))
+# plt.plot([i for i in range(len(diff_acceleration_x))], diff_acceleration_x, label='Diff Acceleration X', color='red')
+# plt.plot([i for i in range(len(corrected_diff_acceleration_x))], corrected_diff_acceleration_x, label='Diff Acceleration X', color='green')
+# plt.plot([i for i in range(len(acceleration_x))], acceleration_x, label='Acceleration X', color='blue')
+# plt.show()
+
+
+# diff_velocity_x = numerical_integration(corrected_diff_acceleration_x, diff_time)
+# diff_velocity_y = numerical_integration(corrected_diff_acceleration_y, diff_time)
+# diff_velocity_z = numerical_integration(corrected_diff_acceleration_z, diff_time)
+
+
+# corrected_diff_velocity_x = correct_velocity_error(diff_velocity_x)
+# corrected_diff_velocity_y = correct_velocity_error(diff_velocity_y)
+# corrected_diff_velocity_z = correct_velocity_error(diff_velocity_z)
+
+
+# diff_position_x = numerical_integration(corrected_diff_velocity_x, diff_time)
+# diff_position_y = numerical_integration(corrected_diff_velocity_y, diff_time)
+# diff_position_z = numerical_integration(corrected_diff_velocity_z, diff_time)
 
 
 visulize_integrals()

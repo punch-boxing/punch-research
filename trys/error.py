@@ -47,7 +47,7 @@ from sklearn.preprocessing import StandardScaler
 # second attempt
 
 
-data = pd.read_csv('./datas/error3.csv')
+data = pd.read_csv('./datas/up_down_fast.csv')
 time = data['time']
 
 acceleration_x = data['x']
