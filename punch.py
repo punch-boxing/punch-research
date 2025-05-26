@@ -1,19 +1,24 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 class Punch:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self.data = pd.read_csv(file_path)
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.data = pd.read_csv(f"./datas/{file_name}.csv")
         
         self.index = self.data['index']
         self.time = self.data['time']
         
         try:
-            self.acceleration_x = self.data['acc x'].copy()
-            self.acceleration_y = self.data['acc y'].copy()
-            self.acceleration_z = self.data['acc z'].copy()
+            self.raw_acceleration_x = self.data['acc x'].copy()
+            self.raw_acceleration_y = self.data['acc y'].copy()
+            self.raw_acceleration_z = self.data['acc z'].copy()
+            
+            self.acceleration_x = self.raw_acceleration_x.copy()
+            self.acceleration_y = self.raw_acceleration_y.copy()
+            self.acceleration_z = self.raw_acceleration_z.copy()
             
             self.gyro_x = self.data['gyro x'].copy()
             self.gyro_y = self.data['gyro y'].copy()
@@ -39,7 +44,6 @@ class Punch:
         
     # def correct_acceleration(self):
     #     _threshold = 0.1
-        
     #     self.acceleration_x = [0.0 if abs(a) < _threshold else a for a in self.acceleration_x]
     #     self.acceleration_y = [0.0 if abs(a) < _threshold else a for a in self.acceleration_y]
     #     self.acceleration_z = [0.0 if abs(a) < _threshold else a for a in self.acceleration_z]
@@ -95,8 +99,16 @@ class Punch:
         self.rotation_y = [r + self.initial_rotation_y for r in self.numerical_integration(self.gyro_y, self.time)]
         self.rotation_z = [y + self.initial_rotation_z for y in self.numerical_integration(self.gyro_z, self.time)]
         
+    def save_graphs(self, name):
+        try:
+            plt.savefig(f'./results/{self.file_name}/{name}.png')
+        except:
+            os.mkdir(f'./results/{self.file_name}')
+            self.save_graphs(name)
+        # plt.close('all')
+        
     def visualize_position(self):
-        plt.figure(figsize=(16, 12))
+        plt.figure(figsize=(20, 12))
         plt.subplot(3, 1, 1)
         plt.plot(self.time, self.acceleration_x, label='Acceleration X', color='red')
         plt.plot(self.time, self.acceleration_y, label='Acceleration Y', color='green')
@@ -124,10 +136,42 @@ class Punch:
         plt.ylabel('Position (m)')
         plt.legend()
         plt.grid()
+        plt.tight_layout()
+        self.save_graphs('position')
+        plt.show()
+        
+    def visualize_removal_of_gravity(self):
+        plt.figure(figsize=(20, 12))
+        plt.subplot(3, 1, 1)
+        plt.plot(self.time, self.raw_acceleration_x, label='Acceleration X', color='red')
+        plt.plot(self.time, self.acceleration_x, label='Gravity Removed Acceleration X', color='orange')
+        plt.title('Acceleration X vs Time')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Acceleration X (m/s²)')
+        plt.legend()
+        plt.grid()
+        plt.subplot(3, 1, 2)
+        plt.plot(self.time, self.raw_acceleration_y, label='Acceleration Y', color='green')
+        plt.plot(self.time, self.acceleration_y, label='Gravity Removed Acceleration Y', color='lime')
+        plt.title('Acceleration Y vs Time')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Acceleration Y (m/s²)')
+        plt.legend()
+        plt.grid()
+        plt.subplot(3, 1, 3)
+        plt.plot(self.time, self.raw_acceleration_z, label='Acceleration Z', color='blue')
+        plt.plot(self.time, self.acceleration_z, label='Gravity Removed Acceleration Z', color='cyan')
+        plt.title('Acceleration Z vs Time')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Acceleration Z (m/s²)')
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        self.save_graphs('removal_of_gravity')
         plt.show()
         
     def visualize_rotation(self):
-        plt.figure(figsize=(16, 12))
+        plt.figure(figsize=(20, 12))
         plt.subplot(3, 1, 1)
         plt.plot(self.time, self.rotation_x, label='Pitch', color='red')
         plt.title('Pitch vs Time')
@@ -149,10 +193,12 @@ class Punch:
         plt.ylabel('Yaw (rad)')
         plt.legend()
         plt.grid()
+        plt.tight_layout()
+        self.save_graphs('rotation')
         plt.show()
         
     def visualize_gravity(self):
-        plt.figure(figsize=(16, 12))
+        plt.figure(figsize=(20, 12))
         plt.subplot(3, 1, 1)
         plt.plot(self.time, self.gravity_x, label='Gravity X', color='red')
         plt.title('Gravity X vs Time')
@@ -174,7 +220,8 @@ class Punch:
         plt.ylabel('Gravity Z (m/s²)')
         plt.legend()
         plt.grid()
+        plt.tight_layout()
+        self.save_graphs('gravity')
         plt.show()
-        
         
         
