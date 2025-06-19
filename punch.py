@@ -83,6 +83,30 @@ class Punch:
             result.append((integrand[i]+integrand[i-1])*(index[i]-index[i-1]) / 2 + result[i-1])
         return result
     
+    def short_integration(self, start, end):
+        _x = self.numerical_integration_with_range(self.acceleration_x, start, end)
+        _y = self.numerical_integration_with_range(self.acceleration_y, start, end)
+        _z = self.numerical_integration_with_range(self.acceleration_z, start, end)
+        
+        plt.figure(figsize=(20, 12))
+        plt.plot(self.time[start:end + 1], _x, label='Velocity X', color='red')
+        plt.plot(self.time[start:end + 1], _y, label='Velocity Y', color='green')
+        plt.plot(self.time[start:end + 1], _z, label='Velocity Z', color='blue')
+        plt.title('Velocity vs Time')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Velocity (m/s)')
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.show()
+        
+    
+    def numerical_integration_with_range(self, integrand, start, end):
+        result = [0.0]
+        for idx, i in enumerate(range(start + 1, end + 1)):
+            result.append((integrand[i] + integrand[i - 1]) * (self.time[i] - self.time[i - 1]) / 2 + result[idx - 1])
+        return result
+    
     def initialize_orientation(self):
         _initial_vector = np.array([self.acceleration_x[0], self.acceleration_y[0], self.acceleration_z[0]])
         _initial_vector = _initial_vector / np.linalg.norm(_initial_vector)
@@ -90,7 +114,7 @@ class Punch:
         
         self.initial_rotation_z = np.arcsin(_initial_vector[0])
         self.initial_rotation_y = 0.0
-        self.initial_rotation_x = np.pi - np.arctan2(_initial_vector[2], _initial_vector[1])
+        self.initial_rotation_x = - np.pi - np.arctan2(_initial_vector[2], _initial_vector[1])
         
         print(f"Initial Vector: {_initial_vector}")
         print(f"Initial Rotation: {np.degrees(self.initial_rotation_x)}, {np.degrees(self.initial_rotation_y)}, {np.degrees(self.initial_rotation_z)}")
