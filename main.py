@@ -4,6 +4,7 @@ import InquirerPy
 
 from punch_calibration import PunchCalibration
 from punch_ml import PunchML
+from punch_gru import PunchGRU
 
 
 if __name__ == "__main__":
@@ -19,6 +20,7 @@ if __name__ == "__main__":
                     "choices": [
                         "Analyze Punch Calibration Data",
                         "Analyze Punch Machine Learning Data",
+                        "Train Punch GRU Model",
                         "Exit"
                     ]
                 }
@@ -122,3 +124,22 @@ if __name__ == "__main__":
                     break
                 else:
                     print("Invalid choice. Please try again.")
+                    
+        elif selection["analysis_type"] == "Train Punch GRU Model":
+            print("You selected: Train Punch GRU Model")
+            files = glob.glob("./datas/**/*.csv", recursive=True)
+            file = InquirerPy.prompt(
+                [
+                    {
+                        "type": "list",
+                        "name": "file",
+                        "message": "Select a file to train the model:",
+                        "choices": files
+                    }
+                ]
+            )
+            gru = PunchGRU(file["file"])
+            gru.compile_model()
+            
+            # Uncomment the following line to train the model
+            # gru.train_model()

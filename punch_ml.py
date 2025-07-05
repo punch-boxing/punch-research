@@ -24,6 +24,8 @@ class PunchML:
             self.orientation_y = self.data['sin ori y'].copy()
             self.orientation_z = self.data['sin ori z'].copy()
             
+            self.user_input = self.data['user input'].copy()
+            
         except KeyError as e:
             input("Error: Missing column in the CSV file. Would you like to continue? (y/n): ")
             if input().lower() != 'y':
@@ -61,7 +63,7 @@ class PunchML:
         plt.xticks(np.arange(0, self.time[len(self.time) - 1], step=0.25), rotation=90)
         plt.legend()
         plt.grid(True)
-    
+        
     def visualize_local_minima(self, data):
         self.draw_local_minima(data)
         plt.show()
@@ -79,25 +81,70 @@ class PunchML:
         self.save_graphs('local_minima', f'{name[2]}_{name[3]}_local_minima')
     
     def visualize_acceleration_and_orientation(self):
-        plt.figure(figsize=(20, 5))
-        plt.subplot(1, 2, 1)
+        index = self.user_input[self.user_input == 1].index
+        draw_point = len(index) is not 0
+        
+        plt.figure(figsize=(20, 10))
+        plt.subplot(3, 2, 1)
         plt.plot(self.time, self.acceleration_x, label='Acceleration X')
-        plt.plot(self.time, self.acceleration_y, label='Acceleration Y')
-        plt.plot(self.time, self.acceleration_z, label='Acceleration Z')
+        if draw_point:
+            plt.scatter(self.time[index], self.acceleration_x[index], color='red', label='Punch')
         plt.xlabel('Time')
         plt.ylabel('Acceleration')
-        plt.title('Acceleration Data')
+        plt.title('Acceleration X')
         plt.legend()
         plt.grid(True)
-        plt.subplot(1, 2, 2)
+        
+        plt.subplot(3, 2, 3)
+        plt.plot(self.time, self.acceleration_y, label='Acceleration Y')
+        if draw_point:
+            plt.scatter(self.time[index], self.acceleration_y[index], color='red', label='Punch')
+        plt.xlabel('Time')
+        plt.ylabel('Acceleration')
+        plt.title('Acceleration Y')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.subplot(3, 2, 5)
+        plt.plot(self.time, self.acceleration_z, label='Acceleration Z')
+        if draw_point:
+            plt.scatter(self.time[index], self.acceleration_z[index], color='red', label='Punch')
+        plt.xlabel('Time')
+        plt.ylabel('Acceleration')
+        plt.title('Acceleration Z')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.subplot(3, 2, 2)
         plt.plot(self.time, self.orientation_x, label='Orientation X')
-        plt.plot(self.time, self.orientation_y, label='Orientation Y')
-        plt.plot(self.time, self.orientation_z, label='Orientation Z')
+        if draw_point:
+            plt.scatter(self.time[index], self.orientation_x[index], color='red', label='Punch')
         plt.xlabel('Time')
         plt.ylabel('Orientation')
-        plt.title('Orientation Data')
+        plt.title('Orientation X')
         plt.legend()
         plt.grid(True)
+        
+        plt.subplot(3, 2, 4)
+        plt.plot(self.time, self.orientation_y, label='Orientation Y')
+        if draw_point:
+            plt.scatter(self.time[index], self.orientation_y[index], color='red', label='Punch')
+        plt.xlabel('Time')
+        plt.ylabel('Orientation')
+        plt.title('Orientation Y')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.subplot(3, 2, 6)
+        plt.plot(self.time, self.orientation_z, label='Orientation Z')
+        if draw_point:
+            plt.scatter(self.time[index], self.orientation_z[index], color='red', label='Punch')
+        plt.xlabel('Time')
+        plt.ylabel('Orientation')
+        plt.title('Orientation Z')
+        plt.legend()
+        plt.grid(True)
+        
         plt.tight_layout()
         plt.show()
         
