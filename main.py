@@ -105,21 +105,15 @@ if __name__ == "__main__":
                             "name": "option",
                             "message": "Select an option:",
                             "choices": [
-                                "Visualize Local Minima",
-                                "Visualize Acceleration with Orientation",
-                                "Save Local Minima",
+                                "Visualize Data",
                                 "Exit"
                             ]
                         }
                     ]
                 )
                 
-                if choice["option"] == "Visualize Local Minima":
-                    ml.visualize_local_minima(ml.acceleration_x)
-                elif choice["option"] == "Visualize Acceleration with Orientation":
-                    ml.visualize_acceleration_and_orientation()
-                elif choice["option"] == "Save Local Minima":
-                    ml.save_local_minima(ml.acceleration_x)
+                if choice["option"] == "Visualize Data":
+                    ml.visualize_data()
                 elif choice["option"] == "Exit":
                     break
                 else:

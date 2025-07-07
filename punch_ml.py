@@ -1,204 +1,115 @@
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks
-# from keras.models import Sequential
-# from keras.layers import Dense, LSTM, Dropout, Convolution1D, Flatten, Conv2D
-
-
 
 class PunchML:
+    PUNCH_TYPES = {
+        "None": 0,
+        "Straight": 1,
+        "Hook": 2,
+        "Body": 3,
+        "Uppercut": 4,
+    }
+    
     def __init__(self, file_name):
         self.file_name = file_name
         self.data = pd.read_csv(file_name)
-        self.index = self.data['index']
-        self.time = self.data['time']
         
         try:
+            self.index = self.data['index'].copy()
+            self.time = self.data['time'].copy()
             self.acceleration_x = self.data['acc x'].copy()
             self.acceleration_y = self.data['acc y'].copy()
             self.acceleration_z = self.data['acc z'].copy()
+            self.orientation_x = self.data['ori x'].copy()
+            self.orientation_z = self.data['ori z'].copy()
+            self.punch = self.data['punch'].copy()
             
-            self.orientation_x = self.data['sin ori x'].copy()
-            self.orientation_y = self.data['sin ori y'].copy()
-            self.orientation_z = self.data['sin ori z'].copy()
-            
-            self.user_input = self.data['user input'].copy()
-            
-        except KeyError as e:
-            input("Error: Missing column in the CSV file. Would you like to continue? (y/n): ")
-            if input().lower() != 'y':
-                raise e
-    
-    
-            
-    def find_local_maxima(self, data):
-        _threshold = 2
-        peaks, properties = find_peaks(data, height=np.mean(data), distance=5)
-        print(peaks)
-        return peaks
-    
-    def find_local_minima(self, data):
-        _threshold = 1.5
-        troughs, properties = find_peaks(-data, height=_threshold)
-        print(troughs)
-        return troughs
-            
-    def draw_local_minima(self, data):
-        minima = self.find_local_minima(data)
-        plt.figure(figsize=(20, 10))
-        plt.plot(self.time, data, label='Data')
-        plt.scatter(self.time[minima], data[minima], color='red', label='Local Minima')
-        for i, min_idx in enumerate(minima):
-            plt.annotate(f't={self.time[min_idx]:.3f}', 
-                        (self.time[min_idx], data[min_idx]), 
-                        xytext=(5, 5), textcoords='offset points', fontsize=8)
-            plt.annotate(f'i={min_idx}', 
-                        (self.time[min_idx], data[min_idx]), 
-                        xytext=(5, -5), textcoords='offset points', fontsize=8)
-        plt.xlabel('Time')
-        plt.ylabel('Value')
-        plt.title(f'{self.file_name} Local Minima(below -1.5)')
-        plt.xticks(np.arange(0, self.time[len(self.time) - 1], step=0.25), rotation=90)
-        plt.legend()
-        plt.grid(True)
-        
-    def visualize_local_minima(self, data):
-        self.draw_local_minima(data)
-        plt.show()
-        
-    def save_graphs(self, folder, name):
-        try:
-            plt.savefig(f'./results/{folder}/{name}.png')
         except:
-            os.mkdir(f'./results/{folder}')
-            self.save_graphs(folder, name)
-            
-    def save_local_minima(self, data):
-        self.draw_local_minima(data)
-        name = self.file_name.split('.')[1].split('/')
-        self.save_graphs('local_minima', f'{name[2]}_{name[3]}_local_minima')
+            print("Error: Missing column in the CSV file.")
+            exit()
     
-    def visualize_acceleration_and_orientation(self):
-        index = self.user_input[self.user_input == 1].index
-        draw_point = len(index) is not 0
+        self.preprocess_data()
+            
+    def preprocess_data(self):
+        self.punch_enum = self.punch.map(self.PUNCH_TYPES).fillna(0).astype(int)
+        self.straight = self.data[self.punch_enum == self.PUNCH_TYPES["Straight"]]
+        self.hook = self.data[self.punch_enum == self.PUNCH_TYPES["Hook"]]
+        self.body = self.data[self.punch_enum == self.PUNCH_TYPES["Body"]]
+        self.uppercut = self.data[self.punch_enum == self.PUNCH_TYPES["Uppercut"]]
+        self.none = self.data[self.punch_enum == self.PUNCH_TYPES["None"]]
         
-        plt.figure(figsize=(20, 10))
-        plt.subplot(3, 2, 1)
-        plt.plot(self.time, self.acceleration_x, label='Acceleration X')
-        if draw_point:
-            plt.scatter(self.time[index], self.acceleration_x[index], color='red', label='Punch')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration')
-        plt.title('Acceleration X')
-        plt.legend()
-        plt.grid(True)
+    def import_all_data(self):
+        self.datas = []
+        for i in range(1, 20):
+            try:
+                file_name = f"./datas/{i}.csv"
+                self.datas.append(pd.read_csv(file_name))
+            except:
+                pass
+            
+            
+    # def compile_gru(self):
         
-        plt.subplot(3, 2, 3)
-        plt.plot(self.time, self.acceleration_y, label='Acceleration Y')
-        if draw_point:
-            plt.scatter(self.time[index], self.acceleration_y[index], color='red', label='Punch')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration')
-        plt.title('Acceleration Y')
-        plt.legend()
-        plt.grid(True)
+    #     self.model = Sequential()
+    #     self.model.add(GRU(64, input_shape=(None, 3), return_sequences=True))
+    #     self.model.add(Dropout(0.2))
+    #     self.model.add(GRU(32))
+    #     self.model.add(Dense(1, activation='sigmoid'))
         
-        plt.subplot(3, 2, 5)
-        plt.plot(self.time, self.acceleration_z, label='Acceleration Z')
-        if draw_point:
-            plt.scatter(self.time[index], self.acceleration_z[index], color='red', label='Punch')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration')
-        plt.title('Acceleration Z')
-        plt.legend()
-        plt.grid(True)
-        
-        plt.subplot(3, 2, 2)
-        plt.plot(self.time, self.orientation_x, label='Orientation X')
-        if draw_point:
-            plt.scatter(self.time[index], self.orientation_x[index], color='red', label='Punch')
-        plt.xlabel('Time')
-        plt.ylabel('Orientation')
-        plt.title('Orientation X')
-        plt.legend()
-        plt.grid(True)
-        
-        plt.subplot(3, 2, 4)
-        plt.plot(self.time, self.orientation_y, label='Orientation Y')
-        if draw_point:
-            plt.scatter(self.time[index], self.orientation_y[index], color='red', label='Punch')
-        plt.xlabel('Time')
-        plt.ylabel('Orientation')
-        plt.title('Orientation Y')
-        plt.legend()
-        plt.grid(True)
-        
-        plt.subplot(3, 2, 6)
-        plt.plot(self.time, self.orientation_z, label='Orientation Z')
-        if draw_point:
-            plt.scatter(self.time[index], self.orientation_z[index], color='red', label='Punch')
-        plt.xlabel('Time')
-        plt.ylabel('Orientation')
-        plt.title('Orientation Z')
-        plt.legend()
-        plt.grid(True)
-        
+    #     self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+            
+    def visualize_data(self):
+        fig, axs = plt.subplots(5, 1, figsize=(15, 22.7))
+        axs[0].plot(self.time, self.acceleration_x, label='Acceleration X')
+        axs[0].set_title('Acceleration X')
+        axs[0].set_xlabel('Time')
+        axs[0].set_ylabel('Acceleration (m/s²)')
+        axs[0].scatter(self.straight['time'], self.straight['acc x'], color='red', label='Straight Punch')
+        axs[0].scatter(self.hook['time'], self.hook['acc x'], color='green', label='Hook Punch')
+        axs[0].scatter(self.body['time'], self.body['acc x'], color='blue', label='Body Punch')
+        axs[0].scatter(self.uppercut['time'], self.uppercut['acc x'], color='orange', label='Uppercut Punch')
+        axs[0].legend()
+        axs[0].grid(True)
+        axs[1].plot(self.time, self.acceleration_y, label='Acceleration Y')
+        axs[1].set_title('Acceleration Y')
+        axs[1].set_xlabel('Time')
+        axs[1].set_ylabel('Acceleration (m/s²)')
+        axs[1].scatter(self.straight['time'], self.straight['acc y'], color='red', label='Straight Punch')
+        axs[1].scatter(self.hook['time'], self.hook['acc y'], color='green', label='Hook Punch')
+        axs[1].scatter(self.body['time'], self.body['acc y'], color='blue', label='Body Punch')
+        axs[1].scatter(self.uppercut['time'], self.uppercut['acc y'], color='orange', label='Uppercut Punch')
+        axs[1].legend()
+        axs[1].grid(True)
+        axs[2].plot(self.time, self.acceleration_z, label='Acceleration Z')
+        axs[2].set_title('Acceleration Z')
+        axs[2].set_xlabel('Time')
+        axs[2].set_ylabel('Acceleration (m/s²)')
+        axs[2].scatter(self.straight['time'], self.straight['acc z'], color='red', label='Straight Punch')
+        axs[2].scatter(self.hook['time'], self.hook['acc z'], color='green', label='Hook Punch')
+        axs[2].scatter(self.body['time'], self.body['acc z'], color='blue', label='Body Punch')
+        axs[2].scatter(self.uppercut['time'], self.uppercut['acc z'], color='orange', label='Uppercut Punch')
+        axs[2].legend()
+        axs[2].grid(True)
+        axs[3].plot(self.time, self.orientation_x, label='Orientation X')
+        axs[3].set_title('Orientation X')
+        axs[3].set_xlabel('Time')
+        axs[3].set_ylabel('Orientation (rad)')
+        axs[3].scatter(self.straight['time'], self.straight['ori x'], color='red', label='Straight Punch')
+        axs[3].scatter(self.hook['time'], self.hook['ori x'], color='green', label='Hook Punch')
+        axs[3].scatter(self.body['time'], self.body['ori x'], color='blue', label='Body Punch')
+        axs[3].scatter(self.uppercut['time'], self.uppercut['ori x'], color='orange', label='Uppercut Punch')
+        axs[3].legend()
+        axs[3].grid(True)
+        axs[4].plot(self.time, self.orientation_z, label='Orientation Z')
+        axs[4].set_title('Orientation Z')
+        axs[4].set_xlabel('Time')
+        axs[4].set_ylabel('Orientation (rad)')
+        axs[4].scatter(self.straight['time'], self.straight['ori z'], color='red', label='Straight Punch')
+        axs[4].scatter(self.hook['time'], self.hook['ori z'], color='green', label='Hook Punch')
+        axs[4].scatter(self.body['time'], self.body['ori z'], color='blue', label='Body Punch')
+        axs[4].scatter(self.uppercut['time'], self.uppercut['ori z'], color='orange', label='Uppercut Punch')
+        axs[4].legend()
+        axs[4].grid(True)
         plt.tight_layout()
-        plt.show()
-        
-    def visualize_acceleration_with_orientation(self):
-        plt.figure(figsize=(20, 10))
-        plt.subplot(3, 1, 1)
-        plt.plot(self.time, self.acceleration_x, label='Acceleration X')
-        plt.plot(self.time, self.orientation_x, label='Orientation X')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration / Orientation')
-        plt.title('Acceleration X and Orientation X')
-        plt.legend()
-        plt.grid(True)
-        plt.subplot(3, 1, 2)
-        plt.plot(self.time, self.acceleration_y, label='Acceleration Y')
-        plt.plot(self.time, self.orientation_y, label='Orientation Y')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration / Orientation')
-        plt.title('Acceleration Y and Orientation Y')
-        plt.legend()
-        plt.grid(True)
-        plt.subplot(3, 1, 3)
-        plt.plot(self.time, self.acceleration_z, label='Acceleration Z')
-        plt.plot(self.time, self.orientation_z, label='Orientation Z')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration / Orientation')
-        plt.title('Acceleration Z and Orientation Z')
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-        
-    def visualize_acceleration(self):
-        plt.figure(figsize=(10, 5))
-        plt.plot(self.time, self.acceleration_x, label='Acceleration X')
-        plt.plot(self.time, self.acceleration_y, label='Acceleration Y')
-        plt.plot(self.time, self.acceleration_z, label='Acceleration Z')
-        plt.xlabel('Time')
-        plt.ylabel('Acceleration')
-        plt.title('Acceleration Data')
-        plt.legend()
-        plt.grid(True)
-        plt.xticks(np.arange(0, self.time[len(self.time) - 1], step=0.25), rotation=90)
-        plt.show()
-        
-    def visualize_orientation(self):
-        plt.figure(figsize=(10, 5))
-        plt.plot(self.time, self.orientation_x, label='Orientation X')
-        plt.plot(self.time, self.orientation_y, label='Orientation Y')
-        plt.plot(self.time, self.orientation_z, label='Orientation Z')
-        plt.xlabel('Time')
-        plt.ylabel('Orientation')
-        plt.title('Orientation Data')
-        plt.legend()
-        plt.grid(True)
-        plt.xticks(np.arange(0, self.time[len(self.time) - 1], step=0.25), rotation=90)
         plt.show()
