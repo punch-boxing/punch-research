@@ -36,20 +36,20 @@ class PunchGRU:
         
         self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         
-    # def train_model(self):
-    #     model = Sequential()
-    #     model.add(GRU(64, input_shape=(None, 3), return_sequences=True))
-    #     model.add(Dropout(0.2))
-    #     model.add(GRU(32))
-    #     model.add(Dense(1, activation='sigmoid'))
+    def train_model(self):
+        # model = Sequential()
+        # model.add(GRU(64, input_shape=(None, 3), return_sequences=True))
+        # model.add(Dropout(0.2))
+        # model.add(GRU(32))
+        # model.add(Dense(1, activation='sigmoid'))
         
-    #     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    #     model.summary()
+        # model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        # model.summary()
         
-    #     # Reshape data for GRU
-    #     X_reshaped = pd.concat(self.X, axis=1).values.reshape(-1, len(self.X), 1)
-    #     y_reshaped = self.y.values.reshape(-1, 1)
+        # # Reshape data for GRU
+        # X_reshaped = pd.concat(self.X, axis=1).values.reshape(-1, len(self.X), 1)
+        # y_reshaped = self.y.values.reshape(-1, 1)
         
-    #     model.fit(X_reshaped, y_reshaped, epochs=10, batch_size=32)
+        # model.fit(X_reshaped, y_reshaped, epochs=10, batch_size=32)
         
-    #     return model
+        # return model

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TensorFlow.js Model Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/variable/woff2/SUIT-Variable.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <style>
+      body {
+        font-family: "SUIT Variable", Arial, sans-serif;
+        background: #f8f9fa;
+        color: #222;
+        margin: 0;
+        padding: 0 48px;
+      }
+      h1 {
+        font-size: 2rem;
+        margin: 1.5rem 0 1rem 0;
+        text-align: center;
+        color: #333;
+      }
+      div,
+      button,
+      select {
+        font-size: 1rem;
+      }
+      #status {
+        margin: 1rem 0;
+        padding: 0.5rem 1rem;
+        background: #e9ecef;
+        border-radius: 4px;
+        display: inline-block;
+      }
+      #model-info,
+      #prediction-result {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #fff;
+        border-radius: 4px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      }
+      button {
+        margin: 0.5rem 0.5rem 0.5rem 0;
+        padding: 0.5rem 1.2rem;
+        background: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      select {
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        margin-left: 0.5rem;
+      }
+      ul {
+        margin: 0.5rem 0 0.5rem 1.5rem;
+        padding: 0;
+      }
+    </style>
+
+    <h1>TensorFlow.js Model Test</h1>
+    <div>
+      Select Model
+      <select id="model-select"></select>
+      <button id="load-model-btn" onclick="loadModel()">Load Model</button>
+    </div>
+
+    <div id="status">Loading model...</div>
+    <div id="model-info"></div>
+    <button id="predict-btn" onclick="makePrediction()">Make Prediction</button>
+    <button id="auto-predict-btn" onclick="autoPrediction()">
+      Auto Predict
+    </button>
+    <button id="evaluate-btn" onclick="evaluateModel()">Evaluate Model</button>
+    <div id="prediction-result"></div>
+
+    <script>
+      let model;
+      let globalIndex = 0;
+      let csvData = [];
+
+      function indexToPunch(index) {
+        switch (index) {
+          case 1:
+            return "Straight";
+          case 2:
+            return "Hook";
+          case 3:
+            return "Body";
+          case 4:
+            return "UpperCut";
+          default:
+            return "None";
+        }
+      }
+
+      const modelSelect = document.getElementById("model-select");
+      async function readDirectory() {
+        try {
+          // Fetch folder list from server-side endpoint
+          const response = await fetch("./");
+          const text = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(text, "text/html");
+          console.log("Directory contents:", doc);
+          const links = Array.from(doc.querySelectorAll("a"));
+          const folders = links
+            .map((a) => a.getAttribute("href"))
+            .filter((href) => href.startsWith("/models/GRU"))
+            .map((href) => href.replace("/models/", ""));
+          modelSelect.innerHTML = folders
+            .map((folder) => `<option value="${folder}">${folder}</option>`)
+            .join("");
+        } catch (error) {
+          console.error("Error reading directory:", error);
+        }
+      }
+
+      async function loadModel() {
+        try {
+          // Load CSV data
+          const response = await fetch("./1.csv");
+          const csvText = await response.text();
+          csvData = csvText
+            .trim()
+            .split("\n")
+            .map((row) =>
+              row.split(",").map((val) => {
+                const trimmed = val.trim();
+                return isNaN(trimmed) ? trimmed : parseFloat(trimmed);
+              })
+            );
+          console.log("CSV data loaded:", csvData);
+
+          model = await tf.loadLayersModel(
+            `./${document.getElementById("model-select").value}/model.json`
+          );
+
+          // Compile the model for evaluation
+          model.compile({
+            optimizer: "adam",
+            loss: "sparseCategoricalCrossentropy",
+            metrics: ["accuracy"],
+          });
+
+          document.getElementById("status").innerHTML =
+            "✅ Model loaded successfully!";
+          //   document.getElementById("predict-btn").style.display = "block";
+
+          // Display model information
+          const modelInfo = document.getElementById("model-info");
+          modelInfo.innerHTML = `
+                    <h3>Model Information:</h3>
+                    <p><strong>Input Shape:</strong> ${JSON.stringify(
+                      model.inputs[0].shape
+                    )}</p>
+                    <p><strong>Output Shape:</strong> ${JSON.stringify(
+                      model.outputs[0].shape
+                    )}</p>
+                    <p><strong>Total Parameters:</strong> ${model.countParams()}</p>
+                    <p><strong>Model Type:</strong> ${
+                      model.constructor.name
+                    }</p>
+                `;
+
+          // Log model summary
+          console.log("Model loaded:", model);
+          model.summary();
+        } catch (error) {
+          document.getElementById("status").innerHTML =
+            "❌ Error loading model: " + error.message;
+          console.error("Error loading model:", error);
+        }
+      }
+
+      async function makePrediction() {
+        if (!model) {
+          alert("Model not loaded yet!");
+          return;
+        }
+
+        try {
+          // Make prediction
+          globalIndex++;
+          const prediction = model.predict(
+            tf.tensor(csvData[globalIndex].slice(2, 7)).reshape([1, 1, 5])
+          );
+          const predictionData = await prediction.data();
+          console.log(csvData[globalIndex]);
+          predictedIndex = predictionData.indexOf(Math.max(...predictionData));
+          const resultDiv = document.getElementById("prediction-result");
+          resultDiv.innerHTML = `
+                    <h3>Prediction Results:</h3>
+                    <p><strong>Input Values:</strong></p>
+                    <ul>
+                        ${csvData[globalIndex]
+                          .slice(2, 7)
+                          .map((val) => `<li>${val.toFixed(6)}</li>`)
+                          .join("")}
+                    </ul>
+                    <p><strong>Prediction Values:</strong></p>
+                    <ul>
+                        ${Array.from(predictionData)
+                          .map(
+                            (val, idx) =>
+                              `<li>Class ${idx}: ${val.toFixed(6)} (${(
+                                val * 100
+                              ).toFixed(2)}%)</li>`
+                          )
+                          .join("")}
+                    </ul>
+                    <p><strong>Predicted Class:</strong> ${predictedIndex}</p>
+                    <p><strong>Predicted Punch:</strong> ${indexToPunch(
+                      predictedIndex
+                    )}</p>
+                    <p><strong>Real Data: ${
+                      csvData[globalIndex][7]
+                    }</strong></p>
+                    <p><strong>Is Correct:</strong> ${
+                      indexToPunch(predictedIndex) === csvData[globalIndex][7]
+                        ? "✅ Yes"
+                        : "❌ No"
+                    }</p>
+                `;
+        } catch (error) {
+          document.getElementById("prediction-result").innerHTML =
+            "❌ Error making prediction: " + error.message;
+          console.error("Error making prediction:", error);
+        }
+      }
+
+      async function evaluateModel() {
+        if (!model) {
+          alert("Model not loaded yet!");
+          return;
+        }
+
+        try {
+          // Filter out rows with non-numeric values
+          const filteredData = csvData.filter((row) => {
+            if (typeof row !== "number") {
+              return row === "Straight"
+                ? 1
+                : row === "Hook"
+                ? 2
+                : row === "Body"
+                ? 3
+                : row === "UpperCut"
+                ? 4
+                : 0;
+            }
+            return false;
+          });
+
+          // Evaluate model
+          const evalResult = model.evaluate(
+            tf
+              .tensor(filteredData.map((row) => row.slice(2, 7)))
+              .reshape([-1, 1, 5]),
+            tf.tensor(filteredData.map((row) => row[7]))
+          );
+          console.log("Evaluation results:", evalResult);
+        } catch (error) {
+          document.getElementById("prediction-result").innerHTML =
+            "❌ Error evaluating model: " + error.message;
+          console.error("Error evaluating model:", error);
+        }
+      }
+
+      // Load the model when the page loads
+      window.onload = readDirectory;
+    </script>
+  </body>
+</html>
