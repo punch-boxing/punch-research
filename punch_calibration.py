@@ -59,7 +59,7 @@ class PunchCalibration:
         _gravity_z = []
         
         for i in range(len(self.time)):
-            _gravity_x.append(np.sin(self.rotation_z[i]))
+            _gravity_x.append(- np.sin(self.rotation_z[i]))
             _gravity_y.append(- np.cos(self.rotation_x[i]) * np.cos(self.rotation_z[i]))
             _gravity_z.append(np.sin(self.rotation_x[i]) * np.cos(self.rotation_z[i]))
             
@@ -111,9 +111,9 @@ class PunchCalibration:
         _initial_vector = np.array([self.acceleration_x[0], self.acceleration_y[0], self.acceleration_z[0]])
         _initial_vector = _initial_vector / np.linalg.norm(_initial_vector)
         
-        self.initial_rotation_z = np.arcsin(_initial_vector[0])
+        self.initial_rotation_x = np.arctan2(_initial_vector[2], _initial_vector[1])
         self.initial_rotation_y = 0.0
-        self.initial_rotation_x = - np.pi - np.arctan2(_initial_vector[2], _initial_vector[1])
+        self.initial_rotation_z = np.arcsin(_initial_vector[0])
         
         print(f"Initial Vector: {_initial_vector}")
         print(f"Initial Rotation: {np.degrees(self.initial_rotation_x)}, {np.degrees(self.initial_rotation_y)}, {np.degrees(self.initial_rotation_z)}")
